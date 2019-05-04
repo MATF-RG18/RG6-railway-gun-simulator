@@ -1,7 +1,9 @@
 #include <stdlib.h>
 #include <GL/glut.h>
 #include <math.h>
-
+//USER ADDON: Kod trenutno je vecinom kopiran sa jednog od casova i editovan za potrebe projekta, 
+//s izuzetkom funkcija za pravljenje ambijenta i voza. Ovo ce se menjati
+//po potrebi tako da cu naznaciti sta je ostalo od pocetnog koda
 /* Definisemo osobine tajmera */
 #define TIMER_INTERVAL 10
 #define TIMER_ID 0
