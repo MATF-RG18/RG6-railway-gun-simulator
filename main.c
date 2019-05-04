@@ -1,9 +1,10 @@
 #include <stdlib.h>
 #include <GL/glut.h>
 #include <math.h>
+#include <stdio.h>
 //USER ADDON: Kod trenutno je vecinom kopiran sa jednog od casova i editovan za potrebe projekta, 
-//s izuzetkom funkcija za pravljenje ambijenta i voza. Ovo ce se menjati
-//po potrebi tako da cu naznaciti sta je ostalo od pocetnog koda
+//s izuzetkom funkcija za pravljenje ambijenta i jedne mete. Ovo ce se menjati
+//po potrebi tako da cu naznaciti sta je ostalo od pocetnog koda kasnije
 /* Definisemo osobine tajmera */
 #define TIMER_INTERVAL 10
 #define TIMER_ID 0
@@ -16,7 +17,7 @@ static void on_keyboard(unsigned char key, int x, int y);
 static void on_reshape(int width, int height);
 static void on_display(void);
 static void on_timer(int);
-static float x,y,z;
+static float r=5.0,alfa=0.0,beta=45.0;
 static float t;                 /* Proteklo vreme */
 static int animation_ongoing;   /* Fleg koji odredjuje da li je
                                  * animacija u toku. */
@@ -83,9 +84,32 @@ static void on_keyboard(unsigned char key, int x, int y)
     case 'R':
         /* Resetuje se proteklo vreme */
         t = 0;
-        x=0;
-        y=0;
-        z=0;
+        alfa=0;
+        beta=0;
+        glutPostRedisplay();
+        break;
+    case '4':
+        alfa+=0.1;
+        glutPostRedisplay();
+        break;
+    case '6':
+        alfa-=0.1;
+        glutPostRedisplay();
+        break;
+    case '2':
+        beta-=0.1;
+        glutPostRedisplay();
+        break;
+    case '8':
+        beta+=0.1;
+        glutPostRedisplay();
+        break;
+    case '+':
+        r+=0.1;
+        glutPostRedisplay();
+        break;
+    case '-':
+        r-=0.1;
         glutPostRedisplay();
         break;
     }
@@ -119,20 +143,10 @@ static void on_timer(int value)
         glutTimerFunc(TIMER_INTERVAL, on_timer, TIMER_ID);
     }
 }
-
-/* Postavlja normalu i kordinate verteksa za tacku sa pparametrima
- * u i v */
-void set_vertex_and_normal(float u, float v)
-{
-    
-    glVertex3f(u, 0, v);
-}
-
 /* Crtamo funkciju */
 void plot_plane()
 {
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
+
     
     /* Koeficijenti ambijentalne refleksije materijala. */
     GLfloat ambient_coeffs[] = { 0.3, 0.7, 0.3, 1 };
@@ -155,20 +169,14 @@ void plot_plane()
 
     glShadeModel(GL_SMOOTH);
     glPushMatrix();
-    glBegin(GL_QUADS);
-    glVertex3f(-40,0,40);
-    glVertex3f(40,0,40);
-    glVertex3f(40,0,-40);
-    glVertex3f(-40,0,-40);
-    glEnd();
+    glTranslatef(0,-0.1,0);
+    glScalef(30,0.01,30);
+    glutSolidCube(1);
     glPopMatrix();
 }
-void draw_train(){
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    
+void draw_cube(){
     /* Koeficijenti ambijentalne refleksije materijala. */
-    GLfloat ambient_coeffs[] = { 0.3, 0.3, 0.7, 1 };
+    GLfloat ambient_coeffs[] = { 0.3, 0.3, 1, 1 };
 
     /* Koeficijenti difuzne refleksije materijala. */
     GLfloat diffuse_coeffs[] = { 0.2, 0.2, 1, 1 };
@@ -188,12 +196,40 @@ void draw_train(){
 
     glShadeModel(GL_SMOOTH);
     glPushMatrix();
-    glTranslatef(0,1,0);
-    glutSolidCube(0.2);
+    glTranslatef(-2,0,0);
+    glutSolidCube(0.1);
+    glPopMatrix();
+}
+void draw_sphere(){
+    /* Koeficijenti ambijentalne refleksije materijala. */
+    GLfloat ambient_coeffs[] = { 0.3, 0.3, 1, 1 };
+
+    /* Koeficijenti difuzne refleksije materijala. */
+    GLfloat diffuse_coeffs[] = { 0.2, 0.2, 1, 1 };
+
+    /* Koeficijenti spekularne refleksije materijala. */
+    GLfloat specular_coeffs[] = { 1, 0, 0, 1 };
+
+    /* Koeficijent glatkosti materijala. */
+    GLfloat shininess = 30;
+
+
+    /* Podesavaju se parametri materijala. */
+    glMaterialfv(GL_FRONT, GL_AMBIENT, ambient_coeffs);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse_coeffs);
+    glMaterialfv(GL_FRONT, GL_SPECULAR, specular_coeffs);
+    glMaterialf(GL_FRONT, GL_SHININESS, shininess);
+
+    glShadeModel(GL_SMOOTH);
+    glPushMatrix();
+    glTranslatef(-2,0,2);
+    glutSolidSphere(0.1,32,32);
     glPopMatrix();
 }
 static void on_display(void)
 {
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
     /* Pozicija svetla (u pitanju je direkcionalno svetlo). */
     GLfloat light_position[] = { 100, 100, 100, 0 };
 
@@ -205,10 +241,9 @@ static void on_display(void)
 
     /* Spekularna boja svetla. */
     GLfloat light_specular[] = { 0.9, 0.9, 0.9, 1 };
-
+    gluLookAt(r*sin(alfa),r*sin(beta),r*cos(alfa),0,0,0,0,1,0);
     /* Brise se prethodni sadrzaj prozora. */
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    gluLookAt(0+x, 8+y, 1+z, 0, 0, 0, 0, 1, 0);
     /* Ukljucuje se osvjetljenje i podesavaju parametri svetla. */
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
@@ -218,8 +253,12 @@ static void on_display(void)
     glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
 
     /* Kreira se objekat. */
+    glPushMatrix();
+    glEnable(GL_CULL_FACE);
     plot_plane();
-    draw_train();
+    draw_cube();
+    draw_sphere();
+    glPopMatrix();
     /* Nova slika se salje na ekran. */
     glutSwapBuffers();
 }
