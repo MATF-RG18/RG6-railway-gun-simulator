@@ -17,7 +17,8 @@ static void on_keyboard(unsigned char key, int x, int y);
 static void on_reshape(int width, int height);
 static void on_display(void);
 static void on_timer(int);
-static float r=5.0,alfa=0.0,beta=45.0;
+static float r=5.0,alfa=0.0,beta=45.0,z=0,gama=0,delta=45,eta=0;
+static float loptax,loptay,loptaz;
 static float t;                 /* Proteklo vreme */
 static int animation_ongoing;   /* Fleg koji odredjuje da li je
                                  * animacija u toku. */
@@ -74,8 +75,8 @@ static void on_keyboard(unsigned char key, int x, int y)
         }
         break;
 
-    case 's':
-    case 'S':
+    case 'h':
+    case 'H':
         /* Zaustavlja se animacija. */
         animation_ongoing = 0;
         break;
@@ -110,6 +111,35 @@ static void on_keyboard(unsigned char key, int x, int y)
         break;
     case '-':
         r-=0.1;
+        glutPostRedisplay();
+        break;
+    case 's':
+    case 'S':
+        z+=0.05;
+        
+        glutPostRedisplay();
+        break;
+    case 'w':
+    case 'W':
+        z-=0.05;
+        glutPostRedisplay();
+        break;
+    case 'a':
+    case 'A':
+        gama+=1;
+        glutPostRedisplay();
+        break;
+    case 'd':
+    case 'D':
+        gama-=1;
+        glutPostRedisplay();
+        break;
+    case '5':
+        delta+=1;
+        glutPostRedisplay();
+        break;
+    case '0':
+        delta-=1;
         glutPostRedisplay();
         break;
     }
@@ -301,7 +331,8 @@ void draw_wheel(){
     glShadeModel(GL_SMOOTH);
     glPushMatrix();
     GLUquadric* quad=gluNewQuadric();
-    gluCylinder(quad,0.05,0.05,0.01,32,32);
+    glRotatef(eta,1,0,0);
+    gluCylinder(quad,0.04,0.04,0.01,32,32);
     gluDisk(quad,0.01,0.05,32,32);
     glTranslatef(0,0.01,0);
     gluDisk(quad,0.01,0.05,32,32);
@@ -538,7 +569,7 @@ static void on_display(void)
     glPopMatrix();
     glPushMatrix();
     glRotatef(90,0,0,1);
-    glTranslatef(0.05,-2.805,0);
+    glTranslatef(0.05,-2.805,z);
     glRotatef(90,1,0,0);
     draw_wheel();
     glTranslatef(0,0.25,0);
@@ -549,19 +580,19 @@ static void on_display(void)
     draw_wheel();
     glPopMatrix();
     glPushMatrix();
-    glTranslatef(2.805,0.075,0.125);
+    glTranslatef(2.805,0.075,0.125+z);
     draw_sidehold();
     glTranslatef(0.195,0,0);
     draw_sidehold();
     glPopMatrix();
     glPushMatrix();
-    glTranslatef(2.9,0.1,0.1);
+    glTranslatef(2.9,0.1,0.1+z);
     draw_chassey();
     glTranslatef(0,0.05,0);
     draw_hold();
     glTranslatef(0,0.05,0);
     glPushMatrix();
-    for(int i=0;i<360;i+=20){
+    for(int i=gama;i<360+gama;i+=20){
         glPushMatrix();
         glRotatef(i,0,1,0);
         glTranslatef(0.05,0,0);
@@ -570,7 +601,7 @@ static void on_display(void)
     }
     for(int i=0;i<3;i++){
         glTranslatef(0,0.02,0);
-        for(int i=40;i<320;i+=20){
+        for(int i=40+gama;i<320+gama;i+=20){
             glPushMatrix();
             glRotatef(i,0,1,0);
             glTranslatef(0.05,0,0);
@@ -580,38 +611,20 @@ static void on_display(void)
     }
     glPushMatrix();
     glTranslatef(0,-0.05,0); 
-    glRotatef(90,0,1,0);
-    glRotatef(-45,1,0,0);
+    glRotatef(gama+90,0,1,0);
+    glRotatef(-delta,1,0,0);
     draw_hangar();
     draw_cannon();
     glPopMatrix();
-    glTranslatef(0,-0.05,0);
-    glTranslatef(0.75/sqrt(2),0.75/sqrt(2),0);
-    draw_cannonball();
     glPopMatrix();
     glPopMatrix();
+    glPopMatrix();
+    glPushMatrix();
+    /*if(!animation_ongoing){
+        glTranslatef(2.9+0.75*cos(-delta),0.1+0.75*sin(delta),(float)z+0.75*cos(-delta));
+        draw_cannonball();
+    }*/
     glPopMatrix();
     /* Nova slika se salje na ekran. */
     glutSwapBuffers();
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
