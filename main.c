@@ -11,14 +11,15 @@
 
 /* Definisemo makro koji vraca maksimalnu vrednost */
 #define max(A, B) (((A) > (B)) ? (A) : (B))
-
+#define pi 3.141259
 /* Deklaracije callback funkcija. */
 static void on_keyboard(unsigned char key, int x, int y);
 static void on_reshape(int width, int height);
 static void on_display(void);
 static void on_timer(int);
-static float r=5.0,alfa=0.0,beta=45.0,z=0,gama=0,delta=45,eta=0;
+static float r=5.0,alfa=90.0,beta=45.0,z=0,gama=-90,delta=45,eta=0;
 static float loptax,loptay,loptaz;
+static float kockas=1,sferas=1;
 static float t;                 /* Proteklo vreme */
 static int animation_ongoing;   /* Fleg koji odredjuje da li je
                                  * animacija u toku. */
@@ -155,7 +156,15 @@ static void on_reshape(int width, int height)
     glLoadIdentity();
     gluPerspective(60, (float) width / height, 1, 10);
 }
-
+static bool detekcijakocka(){
+    if(abs(-1.95-loptax)<=0.03 && abs(0.05-loptay)<=0.03 && abs(0.05-loptaz)<=0.03) return true;
+    else return false;
+}
+static bool detekcijasfera(){
+    // -2 0.1 2
+    if(pow(-2-loptax,2)+pow(0.1-loptay,2)+pow(z-loptaz,2)<=0.01) return true;
+    else return false;
+}
 static void on_timer(int value)
 {
     /*
@@ -163,8 +172,24 @@ static void on_timer(int value)
      */
     if (value != TIMER_ID) return;
 
-    t += 5;
+    t += 1;
+    loptax+=0.2*sin(gama*2*pi/360)*cos(delta*2*pi/360);
+    loptay+=0.2*sin(delta*2*pi/360)-0.01*t;
+    loptaz+=0.2*cos(gama*2*pi/360)*cos(delta*2*pi/360);
+    if(kockas==1){
+        if(detekcijakocka()){
+            r=5.0;alfa=90.0;beta=45.0;
+            while(kockas>=0){
+                kockas-=0.05;
+                glutPostRedisplay();
+            }
+        }
 
+    }
+    if(loptay<=0){
+        animation_ongoing=0;
+        t=0;
+    }
     /* Forsira se ponovno iscrtavanje prozora. */
     glutPostRedisplay();
 
@@ -227,6 +252,7 @@ void draw_cube(){
     glShadeModel(GL_SMOOTH);
     glPushMatrix();
     glTranslatef(-2,0,0);
+    glScalef(1,kockas,1);
     glutSolidCube(0.1);
     glPopMatrix();
 }
@@ -253,6 +279,7 @@ void draw_sphere(){
     glShadeModel(GL_SMOOTH);
     glPushMatrix();
     glTranslatef(-2,0,2);
+    glScalef(1,sferas,1);
     glutSolidSphere(0.1,32,32);
     glPopMatrix();
 }
@@ -327,7 +354,6 @@ void draw_wheel(){
     glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuse_coeffs);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular_coeffs);
     glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, shininess);
-    glDisable(GL_CULL_FACE);
     glShadeModel(GL_SMOOTH);
     glPushMatrix();
     GLUquadric* quad=gluNewQuadric();
@@ -489,7 +515,7 @@ void draw_cannonball(){
 
     glShadeModel(GL_SMOOTH);
     glPushMatrix();
-    glutSolidSphere(0.01,64,64);
+    glutSolidSphere(0.03,64,64);
     glPopMatrix();
 }
 void draw_cannon(){
@@ -511,11 +537,10 @@ void draw_cannon(){
     glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuse_coeffs);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular_coeffs);
     glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, shininess);
-    glDisable(GL_CULL_FACE);
     glShadeModel(GL_SMOOTH);
     glPushMatrix();
     GLUquadric* quad=gluNewQuadric();
-    gluCylinder(quad,0.01,0.01,0.75,32,32);
+    gluCylinder(quad,0.03,0.03,1,32,32);
     glPopMatrix();
 }
 static void on_display(void)
@@ -543,10 +568,9 @@ static void on_display(void)
     glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
     glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
     glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
-
+    glEnable(GL_CULL_FACE);
     /* Kreira se objekat. */
     glPushMatrix();
-    glEnable(GL_CULL_FACE);
     plot_plane();
     draw_cube();
     draw_sphere();
@@ -591,8 +615,7 @@ static void on_display(void)
     glTranslatef(0,0.05,0);
     draw_hold();
     glTranslatef(0,0.05,0);
-    glPushMatrix();
-    for(int i=gama;i<360+gama;i+=20){
+    for(int i=gama;i<360+gama;i+=30){
         glPushMatrix();
         glRotatef(i,0,1,0);
         glTranslatef(0.05,0,0);
@@ -601,7 +624,7 @@ static void on_display(void)
     }
     for(int i=0;i<3;i++){
         glTranslatef(0,0.02,0);
-        for(int i=40+gama;i<320+gama;i+=20){
+        for(int i=gama-40;i<240+gama;i+=30){
             glPushMatrix();
             glRotatef(i,0,1,0);
             glTranslatef(0.05,0,0);
@@ -610,20 +633,30 @@ static void on_display(void)
         }
     }
     glPushMatrix();
-    glTranslatef(0,-0.05,0); 
-    glRotatef(gama+90,0,1,0);
+    glTranslatef(0,-0.06,0); 
+    glRotatef(gama,0,1,0);
     glRotatef(-delta,1,0,0);
     draw_hangar();
     draw_cannon();
     glPopMatrix();
     glPopMatrix();
     glPopMatrix();
-    glPopMatrix();
     glPushMatrix();
-    /*if(!animation_ongoing){
-        glTranslatef(2.9+0.75*cos(-delta),0.1+0.75*sin(delta),(float)z+0.75*cos(-delta));
+    if(!animation_ongoing){
+        /*glTranslatef(2.9,0.2,0.1+z);
+        glRotatef(gama+90,0,1,0);
+        glRotatef(-delta,1,0,0);
+        glTranslatef(0,0,0.75);*/
+        loptax=2.9+sin(gama*2*pi/360)*cos(delta*2*pi/360);
+        loptay=0.2+sin(delta*2*pi/360);
+        loptaz=0.1+z+cos(gama*2*pi/360)*cos(delta*2*pi/360);
+        glTranslatef(loptax,loptay,loptaz);
         draw_cannonball();
-    }*/
+    }
+    else{
+        glTranslatef(loptax,loptay,loptaz);
+        draw_cannonball();
+    }
     glPopMatrix();
     /* Nova slika se salje na ekran. */
     glutSwapBuffers();
