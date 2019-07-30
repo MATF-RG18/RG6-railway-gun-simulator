@@ -2,15 +2,14 @@
 #include <GL/glut.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdbool.h>
+#include <string.h>
 //USER ADDON: Kod trenutno je vecinom kopiran sa jednog od casova i editovan za potrebe projekta, 
 //s izuzetkom funkcija za pravljenje ambijenta i jedne mete. Ovo ce se menjati
 //po potrebi tako da cu naznaciti sta je ostalo od pocetnog koda kasnije
 /* Definisemo osobine tajmera */
 #define TIMER_INTERVAL 10
 #define TIMER_ID 0
-
-/* Definisemo makro koji vraca maksimalnu vrednost */
-#define max(A, B) (((A) > (B)) ? (A) : (B))
 #define pi 3.141259
 /* Deklaracije callback funkcija. */
 static void on_keyboard(unsigned char key, int x, int y);
@@ -19,7 +18,13 @@ static void on_display(void);
 static void on_timer(int);
 static float r=5.0,alfa=90.0,beta=45.0,z=0,gama=-90,delta=45,eta=0;
 static float loptax,loptay,loptaz;
-static float kockas=1,sferas=1;
+static float kockas=1,sferas=1,mkocka=1,msfera=1;
+static int ugaovetra=0;
+static float brzinavetra=0;
+static bool pogodio=0;
+static char compoundstring[300];
+static int poeni=0;
+static char tmp[50];
 static float t;                 /* Proteklo vreme */
 static int animation_ongoing;   /* Fleg koji odredjuje da li je
                                  * animacija u toku. */
@@ -31,7 +36,6 @@ int main(int argc, char **argv)
     t = 0;
     animation_ongoing = 0;
     active_function = 0;
-
     /* Inicijalizuje se GLUT. */
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH | GLUT_DOUBLE);
@@ -52,7 +56,8 @@ int main(int argc, char **argv)
 
     /* Ukljucujemo normalizaciju vektora normala */
     glEnable(GL_NORMALIZE);
-
+    ugaovetra=random()%360;
+    brzinavetra=0.01*(random()%10);
     /* Program ulazi u glavnu petlju. */
     glutMainLoop();
 
@@ -71,6 +76,7 @@ static void on_keyboard(unsigned char key, int x, int y)
     case 'G':
         /* Pokrece se animacija. */
         if (!animation_ongoing) {
+            poeni-=10;
             glutTimerFunc(TIMER_INTERVAL, on_timer, TIMER_ID);
             animation_ongoing = 1;
         }
@@ -86,24 +92,24 @@ static void on_keyboard(unsigned char key, int x, int y)
     case 'R':
         /* Resetuje se proteklo vreme */
         t = 0;
-        alfa=0;
-        beta=0;
+        alfa=90;
+        beta=45;
         glutPostRedisplay();
         break;
     case '4':
-        alfa+=0.1;
+        alfa+=0.05;
         glutPostRedisplay();
         break;
     case '6':
-        alfa-=0.1;
+        alfa-=0.05;
         glutPostRedisplay();
         break;
     case '2':
-        beta-=0.1;
+        beta-=0.05;
         glutPostRedisplay();
         break;
     case '8':
-        beta+=0.1;
+        beta+=0.05;
         glutPostRedisplay();
         break;
     case '+':
@@ -117,7 +123,6 @@ static void on_keyboard(unsigned char key, int x, int y)
     case 's':
     case 'S':
         z+=0.05;
-        
         glutPostRedisplay();
         break;
     case 'w':
@@ -157,38 +162,50 @@ static void on_reshape(int width, int height)
     gluPerspective(60, (float) width / height, 1, 10);
 }
 static bool detekcijakocka(){
-    if(abs(-1.95-loptax)<=0.03 && abs(0.05-loptay)<=0.03 && abs(0.05-loptaz)<=0.03) return true;
-    else return false;
+    if(abs(2-loptax)<=0.05 && abs(-loptay)<=0.05 && abs(-loptaz)<=0.05) return true;
+    return false;
 }
 static bool detekcijasfera(){
-    // -2 0.1 2
-    if(pow(-2-loptax,2)+pow(0.1-loptay,2)+pow(z-loptaz,2)<=0.01) return true;
-    else return false;
+    if(pow(-(2+loptax),2)+pow(0.1-loptay,2)+pow(2-loptaz,2)<=0.01) return true;
+    return false;
 }
 static void on_timer(int value)
-{
+{ 
     /*
      * Proverava se da li callback dolazi od odgovarajuceg tajmera.
      */
     if (value != TIMER_ID) return;
 
     t += 1;
-    loptax+=0.2*sin(gama*2*pi/360)*cos(delta*2*pi/360);
+    loptax+=0.2*sin(gama*2*pi/360)*cos(delta*2*pi/360)+brzinavetra*sin(ugaovetra*2*pi/360.0);
     loptay+=0.2*sin(delta*2*pi/360)-0.01*t;
-    loptaz+=0.2*cos(gama*2*pi/360)*cos(delta*2*pi/360);
-    if(kockas==1){
-        if(detekcijakocka()){
-            r=5.0;alfa=90.0;beta=45.0;
-            while(kockas>=0){
-                kockas-=0.05;
-                glutPostRedisplay();
-            }
-        }
-
+    loptaz+=0.2*cos(gama*2*pi/360)*cos(delta*2*pi/360)+brzinavetra*cos(ugaovetra*2*pi/360.0);
+    if(kockas==1 && mkocka==1 && detekcijakocka()){
+        kockas=0;
+        glutPostRedisplay();
     }
-    if(loptay<=0){
+    else if(sferas==1 && msfera==1 && detekcijasfera()){
+        sferas=0;
+    }
+    else if(loptay<=0 && pogodio==0){
         animation_ongoing=0;
         t=0;
+    }
+    if(kockas==0 && mkocka==1){
+        pogodio=0;
+        mkocka=0;
+        animation_ongoing=0;
+        poeni+=100;
+        glutPostRedisplay();
+        printf("Pogodili ste kocku!\n");
+    }
+    if(sferas==0 && msfera==1){
+        pogodio=0;
+        msfera=0;
+        animation_ongoing=0;
+        poeni+=100;
+        glutPostRedisplay();
+        printf("Pogodili ste sferu!\n");
     }
     /* Forsira se ponovno iscrtavanje prozora. */
     glutPostRedisplay();
@@ -251,9 +268,9 @@ void draw_cube(){
 
     glShadeModel(GL_SMOOTH);
     glPushMatrix();
-    glTranslatef(-2,0,0);
+    glTranslatef(-2,0.1,0);
     glScalef(1,kockas,1);
-    glutSolidCube(0.1);
+    glutSolidCube(0.2);
     glPopMatrix();
 }
 void draw_sphere(){
@@ -279,7 +296,6 @@ void draw_sphere(){
     glShadeModel(GL_SMOOTH);
     glPushMatrix();
     glTranslatef(-2,0,2);
-    glScalef(1,sferas,1);
     glutSolidSphere(0.1,32,32);
     glPopMatrix();
 }
@@ -543,10 +559,31 @@ void draw_cannon(){
     gluCylinder(quad,0.03,0.03,1,32,32);
     glPopMatrix();
 }
+void drawtext(char* string,float x,float y) 
+{  
+	int c;
+	glRasterPos2f(x,y);
+	for(c=0;string[c]!='\0';c++){
+		glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_10, (int)string[c]);
+	}
+}
 static void on_display(void)
 {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+    for(int i=0;i<300;i++) compoundstring[i]=0;
+    strcat(compoundstring,"Dobrodosli!\n");
+    strcat(compoundstring,"Poena imate:");
+    sprintf(tmp,"%d\n",poeni);
+    strcat(compoundstring,tmp);
+    strcat(compoundstring,"Brzina vetra ");
+    sprintf(tmp,"%d",brzinavetra*100);
+    strcat(compoundstring,tmp);
+    strcat(compoundstring,"km/h\nUgao vetra ");
+    sprintf(tmp,"%d ",(ugaovetra+180)%360);
+    strcat(compoundstring,tmp);
+    strcat(compoundstring,"stepeni\n");
+    if(sferas==0 && kockas==0) strcat(compoundstring,"Pobedili ste!\n");
     /* Pozicija svetla (u pitanju je direkcionalno svetlo). */
     GLfloat light_position[] = { 100, 100, 100, 0 };
 
@@ -572,8 +609,8 @@ static void on_display(void)
     /* Kreira se objekat. */
     glPushMatrix();
     plot_plane();
-    draw_cube();
-    draw_sphere();
+    if(mkocka==1) draw_cube();
+    if(msfera==1) draw_sphere();
     glPushMatrix();
     glTranslatef(2.8,0.02,0);
     draw_rails();
@@ -651,12 +688,26 @@ static void on_display(void)
         loptay=0.2+sin(delta*2*pi/360);
         loptaz=0.1+z+cos(gama*2*pi/360)*cos(delta*2*pi/360);
         glTranslatef(loptax,loptay,loptaz);
-        draw_cannonball();
+        if(pogodio==0) draw_cannonball();
     }
     else{
         glTranslatef(loptax,loptay,loptaz);
-        draw_cannonball();
+        if(pogodio==0) draw_cannonball();
     }
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    gluOrtho2D(0.0, GLUT_SCREEN_WIDTH, 0.0, GLUT_SCREEN_HEIGHT);
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+    glColor3f(1,0,0);
+    glRasterPos2i(10,10);
+    drawtext(compoundstring,10,10);
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+    printf("%s\n",compoundstring);
+    glMatrixMode(GL_PROJECTION);
     glPopMatrix();
     /* Nova slika se salje na ekran. */
     glutSwapBuffers();
