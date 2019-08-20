@@ -8,7 +8,7 @@ Simulacija ima veliki broj kontrola, predlaže se koričšćenje brojnih dirki s
 Za orijentaciju kamere:
 4 i 6 služe za rotiranje kamere levo/desno oko centra mape.
 2 i 8 služe za rotiranje kamere gore/dole oko centra mape.
-+ i - služe za menjanje razdaljine od centra mape.
+Plus i Minus služe za menjanje razdaljine od centra mape.
 Za pozicioniranje voza:
 W i S služe za pomeranje voza gole/dole po šinama.
 A I D služe za rotiranje cevi levo/desno.
