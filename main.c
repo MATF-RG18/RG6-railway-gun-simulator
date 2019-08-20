@@ -74,7 +74,7 @@ static void on_keyboard(unsigned char key, int x, int y)
         break;
     case 'g':
     case 'G':
-        /* Pokrece se animacija. */
+        /* PALI!. */
         if (!animation_ongoing) {
             poeni-=10;
             glutTimerFunc(TIMER_INTERVAL, on_timer, TIMER_ID);
@@ -152,7 +152,7 @@ static void on_reshape(int width, int height)
     glLoadIdentity();
     gluPerspective(60, (float) width / height, 1, 10);
 }
-//funkcija za detekciju kolizije sa kockom, korišćenjem koordinata kocke i đuleta
+//funkcija za detekciju kolizije sa kockom, korišćenjem koordinata centara kocke i đuleta
 static bool detekcijakocka(){
     if(abs(2-loptax)<=0.05 && abs(-loptay)<=0.05 && abs(-loptaz)<=0.05) return true;
     return false;
